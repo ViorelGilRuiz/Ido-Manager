@@ -1,54 +1,39 @@
 ﻿# I Do Manager
 
-I Do Manager es una plataforma SaaS modular para organizacion de bodas y eventos, enfocada en dos perfiles:
+<p align="center">
+  <img src="https://img.shields.io/badge/Status-Active-0f766e?style=for-the-badge" alt="status"/>
+  <img src="https://img.shields.io/badge/Frontend-Angular-dd0031?style=for-the-badge&logo=angular&logoColor=white" alt="angular"/>
+  <img src="https://img.shields.io/badge/Backend-NestJS-e0234e?style=for-the-badge&logo=nestjs&logoColor=white" alt="nestjs"/>
+  <img src="https://img.shields.io/badge/ORM-Prisma-2d3748?style=for-the-badge&logo=prisma&logoColor=white" alt="prisma"/>
+  <img src="https://img.shields.io/badge/DB-PostgreSQL-336791?style=for-the-badge&logo=postgresql&logoColor=white" alt="postgres"/>
+  <img src="https://img.shields.io/badge/Infra-Docker-2496ed?style=for-the-badge&logo=docker&logoColor=white" alt="docker"/>
+</p>
 
-- `ADMIN` (wedding planner / negocio)
-- `CLIENT` (cliente final)
+## ✨ Vision
+**I Do Manager** es una plataforma SaaS modular para wedding planners y clientes finales, enfocada en convertir la planificacion de bodas y eventos en un sistema visual, escalable y reutilizable basado en templates inteligentes.
 
-Su objetivo es convertir la planificacion en un sistema estructurado, visual y reutilizable basado en **templates inteligentes**.
+Perfiles principales:
+- `ADMIN` → wedding planner / negocio
+- `CLIENT` → cliente final
 
-## Propuesta de valor
+## 🎯 Propuesta de valor
+- Estandariza operaciones con templates reutilizables.
+- Reduce errores con checklist, timeline, budget, invitados y proveedores.
+- Mejora la experiencia del cliente con flujos claros y visuales.
+- Permite escalar por negocio con enfoque multi-tenant (`businessId`).
 
-- Estandariza operaciones de wedding planning con plantillas reutilizables.
-- Reduce errores operativos con checklist, timeline, presupuesto, invitados y proveedores.
-- Permite crear experiencias premium para cliente final con seguimiento claro.
-- Escala por negocio con enfoque multi-tenant (`businessId`).
+## 🧱 Stack tecnico
+| Capa | Tecnologia |
+|---|---|
+| Frontend | Angular (standalone), TypeScript, RxJS |
+| Backend | NestJS, Node.js, TypeScript |
+| ORM | Prisma |
+| Base de datos | PostgreSQL (Docker) + SQLite fallback dev |
+| Auth | JWT + refresh token |
+| Calidad | ESLint, Prettier, Husky, lint-staged |
+| Infra | Docker Compose, NPM Workspaces |
 
-## Stack tecnico
-
-### Frontend
-
-- Angular (standalone components)
-- TypeScript
-- RxJS
-- Routing modular por features
-- UI/UX custom con enfoque dashboard + editor visual
-
-### Backend
-
-- Node.js
-- NestJS
-- TypeScript
-- Prisma ORM
-- JWT auth + refresh flow
-- DTOs + validacion con class-validator
-
-### Base de datos
-
-- PostgreSQL (docker)
-- Soporte de desarrollo local con SQLite para fallback rapido
-
-### Calidad y tooling
-
-- ESLint
-- Prettier
-- Husky (pre-commit)
-- lint-staged
-- Workspaces NPM
-- Docker Compose
-
-## Arquitectura del monorepo
-
+## 🏗️ Arquitectura
 ```text
 ido-manager/
   apps/
@@ -61,67 +46,52 @@ ido-manager/
   README.md
 ```
 
-### Principios aplicados
-
+Principios aplicados:
 - Arquitectura modular por features
-- Separacion backend/frontend clara
-- Contratos de API versionados (`/api/v1/...`)
-- DTOs y validacion fuerte en backend
-- Modelo orientado a producto (templates -> documents)
+- Separacion clara frontend/backend
+- API versionada (`/api/v1/...`)
+- DTOs + validacion robusta
+- Modelo de producto: `Template -> Document`
 
-## Dominio del producto
-
-### Entidades principales
-
+## 🧠 Dominio
+Entidades core:
 - `User`
 - `Business`
 - `Event`
 - `Template`
 - `Document`
 
-### Flujo core
+Flujo principal:
+1. Crear template base
+2. Crear evento
+3. Instanciar documento desde template
+4. Editar contenido operativo del evento
 
-1. Se crea template base (checklist/timeline/budget/etc.)
-2. Se crea evento
-3. Se instancia document desde template para ese evento
-4. Se edita/actualiza el contenido operativo
+## 🚀 Funcionalidades implementadas
+### 🔐 Auth
+- Register / Login / Refresh / Logout / Me
+- Guards de ruta e interceptor auth
 
-## Funcionalidades implementadas
-
-### Autenticacion y sesion
-
-- Registro
-- Login
-- Perfil de usuario (`me`)
-- Guards de acceso en front
-- Interceptor auth
-
-### Templates (core del producto)
-
+### 🧩 Template Studio (core)
 - Wizard de creacion por pasos
-- Presets para wedding planner, cliente y modo mixto
-- Edicion de estructura (secciones/campos)
+- Presets (planner / client / mixed)
+- Edicion estructural (secciones/campos)
 - Duplicado y reordenacion de bloques
-- Biblioteca de templates con filtros y ordenacion
-- Duplicar/eliminar templates
-- Preview en grande tipo "Canva" con modal visual
-- Galeria de plantillas ejemplo orientadas a bodas
+- Biblioteca con filtros y ordenacion
+- Vista previa grande tipo Canva
+- Galeria visual de plantillas de boda
 
-### Editor de templates
-
-- Edicion de metadata + estructura
+### 📝 Editor de template
+- Edicion de metadata y schema
 - Autosave con debounce
-- Estado de guardado visible
+- Estado de guardado en tiempo real
 
-### Panel privado
-
-- Sidebar + topbar
+### 🖥️ App privada
+- Layout profesional (sidebar + topbar)
 - Dashboard modular
-- Navegacion por features
-- Estilos responsive
+- Experiencia responsive
 
-## Endpoints relevantes (v1)
-
+## 🌐 API v1 (endpoints clave)
 - `POST /api/v1/auth/register`
 - `POST /api/v1/auth/login`
 - `POST /api/v1/auth/refresh`
@@ -138,26 +108,15 @@ ido-manager/
 - `POST /api/v1/events/:eventId/documents`
 
 Health check:
-
 - `GET http://localhost:3000/api/health`
 
-## Ejecucion local
-
+## ⚙️ Setup local
 ### Requisitos
-
 - Node 20+
 - npm 10+
 - Docker + Docker Compose
 
-### Setup
-
-1. Clonar repo
-2. Crear variables de entorno desde `.env.example`
-3. Instalar dependencias
-4. Levantar servicios base
-5. Ejecutar migraciones
-6. Iniciar apps
-
+### Comandos
 ```bash
 npm install
 npm run dev:db
@@ -166,66 +125,51 @@ npm --workspace apps/api run prisma:migrate -- --name init
 npm run dev
 ```
 
-### URLs de desarrollo
-
+### URLs
 - Frontend: `http://localhost:4200`
 - API: `http://localhost:3000`
 - PgAdmin: `http://localhost:5050`
 
-## Docker
-
-`docker-compose.yml` incluye:
-
+## 🐳 Docker
+Servicios incluidos en `docker-compose.yml`:
 - PostgreSQL
 - PgAdmin
-- (y servicios de aplicacion segun entorno)
-
-Comando util:
+- servicios de aplicacion segun entorno
 
 ```bash
 docker compose up -d
 ```
 
-## Seguridad
-
-- JWT en requests autenticadas
+## 🔒 Seguridad
+- JWT para sesiones autenticadas
 - Refresh token strategy
 - Validacion de payloads en backend
-- Filtrado por contexto de negocio (`businessId`) en endpoints de dominio
+- Filtrado por `businessId` para aislamiento multi-tenant
 
-## UX/UI
+## 🎨 UX/UI
+- Sistema visual con tarjetas y micro-interacciones
+- Diseno premium orientado a productividad
+- Preview rica para validar antes de guardar
+- Responsive desktop/mobile
 
-- Dashboard privado consistente
-- Sistema visual de tarjetas y micro-interacciones
-- Diseno responsive desktop/mobile
-- Preview enriquecida para reducir friccion antes de guardar
-- Flujo de templates orientado a productividad real
-
-## Roadmap sugerido
-
-- RBAC avanzado por permisos granulares
-- Colaboracion en tiempo real (multi-user editing)
-- Historial/versionado de templates y documents
+## 🛣️ Roadmap
+- RBAC granular
+- Colaboracion en tiempo real
+- Versionado de templates/documents
 - Exportacion PDF/Excel
-- Notificaciones y recordatorios automativos
-- Analitica de productividad por negocio
+- Notificaciones inteligentes
+- Analitica por negocio
 
-## Enfoque profesional del proyecto
+## 💼 Enfoque profesional
+Este proyecto esta planteado como producto real, no como simple demo:
+- arquitectura mantenible
+- dominio de negocio bien definido
+- calidad de codigo y tooling
+- capacidad de evolucion a SaaS multi-tenant
 
-Este proyecto esta planteado como producto real, no solo como demo tecnica:
-
-- Arquitectura mantenible
-- Dominio de negocio bien delimitado
-- Calidad de codigo y tooling
-- Orientacion clara a escalabilidad SaaS
-- Experiencia de usuario cuidada para operaciones de alto detalle
-
-## Autor
-
-**Viorel Gil Ruiz**
-
+## 👨‍💻 Autor
+**Viorel Gil Ruiz**  
 Desarrollador Full Stack orientado a producto, arquitectura y experiencia de usuario.
 
 ---
-
-Si te interesa colaborar o evaluar el proyecto para entorno profesional, puedes usar este repositorio como base para una vertical SaaS completa en el sector eventos.
+Si quieres, en el siguiente paso te lo adapto tambien en ingles para recruiters internacionales (`README_ES.md` + `README.md` en EN).
