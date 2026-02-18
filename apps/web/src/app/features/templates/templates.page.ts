@@ -3,6 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { Component, inject } from '@angular/core';
 import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
+import { forkJoin } from 'rxjs';
 import { TemplateModel, TemplateType } from '../../shared/models';
 
 type TemplateFieldType = 'text' | 'checkbox' | 'currency' | 'time' | 'number' | 'textarea' | 'date' | 'select';
@@ -10,8 +11,24 @@ type TemplateField = { key: string; label: string; type: TemplateFieldType; requ
 type TemplateSection = { title: string; description?: string; fields: TemplateField[] };
 type CreatorTone = 'minimal' | 'balanced' | 'detailed';
 type CreatorStep = 1 | 2 | 3;
-type SortMode = 'recent' | 'name' | 'fields';
+type SortMode = 'recent' | 'name' | 'fields' | 'quality';
 type TemplateAudience = 'planner' | 'client' | 'mixed';
+type WeddingBlockId =
+  | 'legal'
+  | 'venue'
+  | 'ceremony'
+  | 'catering'
+  | 'photo_video'
+  | 'music_show'
+  | 'guest_experience'
+  | 'vendors_ops'
+  | 'budget_control'
+  | 'transport_logistics';
+
+type QualityReport = {
+  score: number;
+  missingCritical: string[];
+};
 
 type ExampleTemplate = {
   id: string;
@@ -40,6 +57,16 @@ type BigPreview = {
   audience: TemplateAudience;
 };
 
+type CompareItem = {
+  id: string;
+  name: string;
+  type: TemplateType;
+  sections: number;
+  fields: number;
+  score: number;
+  missingCritical: string[];
+};
+
 @Component({
   selector: 'app-templates-page',
   standalone: true,
@@ -49,7 +76,7 @@ type BigPreview = {
       <header class="page-head">
         <div>
           <p class="kicker">Template Studio</p>
-          <h1>Diseno estilo Canva para wedding planner</h1>
+          <h1>Diseno wedding planner</h1>
           <p class="muted-copy">Plantillas visuales, preview grande y flujo completo para planner y cliente.</p>
         </div>
         <div class="head-stat">
@@ -57,6 +84,40 @@ type BigPreview = {
           <strong>{{ templates.length }}</strong>
         </div>
       </header>
+
+      <section class="panel-card business-board">
+        <div class="panel-head">
+          <h3>Business cockpit</h3>
+          <span class="muted-copy">Salud funcional de tu biblioteca wedding</span>
+        </div>
+        <div class="insight-grid">
+          <article class="insight-card">
+            <p>Calidad media</p>
+            <strong>{{ avgQualityScore }}/100</strong>
+          </article>
+          <article class="insight-card">
+            <p>Favoritas</p>
+            <strong>{{ favorites.size }}</strong>
+          </article>
+          <article class="insight-card">
+            <p>Cobertura core</p>
+            <strong>{{ coreCoverageLabel }}</strong>
+          </article>
+        </div>
+        <p class="muted-copy" *ngIf="missingTemplateTypes.length">
+          Faltan plantillas base: {{ missingTemplateTypes.join(', ') }}
+        </p>
+        <div class="actions-row">
+          <button
+            type="button"
+            class="ghost-btn"
+            (click)="createMissingCoreTemplates()"
+            [disabled]="!missingTemplateTypes.length || bulkCreating"
+          >
+            {{ bulkCreating ? 'Generando...' : 'Crear plantillas core automaticamente' }}
+          </button>
+        </div>
+      </section>
 
       <section class="template-create wizard-card canva-panel">
         <div class="panel-head">
@@ -108,6 +169,19 @@ type BigPreview = {
             <h4>Estructura editable</h4>
             <button type="button" class="ghost-btn" (click)="addSection()">+ Seccion</button>
           </div>
+          <div class="planner-toolkit">
+            <p class="muted-copy">Bloques pro para wedding planner</p>
+            <div class="block-chip-grid">
+              <button
+                type="button"
+                class="ghost-btn"
+                *ngFor="let block of weddingBlockCatalog"
+                (click)="addWeddingBlock(block.id)"
+              >
+                + {{ block.label }}
+              </button>
+            </div>
+          </div>
           <div class="section-stack" *ngIf="draftSections.length">
             <article class="section-card" *ngFor="let section of draftSections; let si = index">
               <div class="panel-head">
@@ -147,9 +221,14 @@ type BigPreview = {
             <div class="detail-row">
               <span>Secciones: <strong>{{ previewDraft.schemaJson.sections.length }}</strong></span>
               <span>Campos: <strong>{{ countFields(previewDraft.schemaJson) }}</strong></span>
+              <span>Calidad: <strong>{{ evaluateTemplateQuality(previewDraft.schemaJson.sections).score }}/100</strong></span>
             </div>
+            <p class="meta-line" *ngIf="evaluateTemplateQuality(previewDraft.schemaJson.sections).missingCritical.length">
+              Faltan bloques clave: {{ evaluateTemplateQuality(previewDraft.schemaJson.sections).missingCritical.join(', ') }}
+            </p>
             <div class="actions-row">
               <button type="button" class="ghost-btn" (click)="openBigPreviewFromDraft()">Ver en grande</button>
+              <button type="button" class="ghost-btn" (click)="exportDraftJson()" [disabled]="!previewDraft">Exportar JSON</button>
             </div>
           </article>
         </section>
@@ -199,7 +278,19 @@ type BigPreview = {
             <option value="recent">Recientes</option>
             <option value="name">Nombre</option>
             <option value="fields">Mas campos</option>
+            <option value="quality">Mejor calidad</option>
           </select>
+          <label class="quality-filter">
+            Calidad min
+            <input type="range" min="0" max="100" step="10" [(ngModel)]="qualityFilter" (ngModelChange)="applyFilters()" />
+            <span>{{ qualityFilter }}</span>
+          </label>
+          <button type="button" class="ghost-btn" (click)="toggleFavoritesOnly()" [class.is-active]="showFavoritesOnly">
+            {{ showFavoritesOnly ? 'Solo favoritas' : 'Ver favoritas' }}
+          </button>
+          <button type="button" class="ghost-btn" (click)="openCompareModal()" [disabled]="compareSelection.size < 2">
+            Comparar ({{ compareSelection.size }})
+          </button>
           <button type="button" class="ghost-btn" (click)="resetFilters()">Limpiar</button>
         </div>
       </section>
@@ -213,10 +304,22 @@ type BigPreview = {
           <div class="detail-row">
             <span>Secciones: <strong>{{ countSections(template.schemaJson) }}</strong></span>
             <span>Campos: <strong>{{ countFields(template.schemaJson) }}</strong></span>
+            <span>Calidad: <strong>{{ evaluateTemplateQuality(getSections(template.schemaJson)).score }}/100</strong></span>
           </div>
+          <p class="meta-line" *ngIf="evaluateTemplateQuality(getSections(template.schemaJson)).missingCritical.length">
+            Falta: {{ evaluateTemplateQuality(getSections(template.schemaJson)).missingCritical.join(', ') }}
+          </p>
           <div class="actions-row">
+            <button type="button" class="ghost-btn" (click)="toggleCompare(template)" [class.is-active]="isCompared(template.id)">
+              {{ isCompared(template.id) ? 'En comparador' : 'Comparar' }}
+            </button>
+            <button type="button" class="ghost-btn" (click)="toggleFavorite(template.id)" [class.is-active]="isFavorite(template.id)">
+              {{ isFavorite(template.id) ? 'Favorita' : 'Favorita +' }}
+            </button>
             <button type="button" class="ghost-btn" (click)="openBigPreviewFromTemplate(template)">Vista grande</button>
             <a [routerLink]="['/app/templates', template.id]" class="ghost-btn action-link">Editar</a>
+            <button type="button" class="ghost-btn" (click)="loadTemplateIntoBuilder(template)">Cargar en creador</button>
+            <button type="button" class="ghost-btn" (click)="exportTemplateJson(template)">Exportar</button>
             <button type="button" class="ghost-btn" (click)="duplicateTemplate(template)">Duplicar</button>
             <button type="button" class="ghost-btn danger-btn" (click)="deleteTemplate(template)">Eliminar</button>
           </div>
@@ -250,27 +353,70 @@ type BigPreview = {
         </div>
       </article>
     </div>
+
+    <div class="preview-modal" *ngIf="showCompareModal" (click)="closeCompareModal()">
+      <article class="preview-modal-card compare-modal-card" (click)="$event.stopPropagation()">
+        <button type="button" class="ghost-btn close-btn" (click)="closeCompareModal()">Cerrar</button>
+        <div class="preview-hero compare-hero">
+          <p class="type-chip">Compare Studio</p>
+          <h2>Comparador de plantillas</h2>
+          <p>Analiza estructura, cobertura y calidad para elegir la mejor base.</p>
+        </div>
+        <div class="compare-grid">
+          <article class="compare-col" *ngFor="let item of comparedTemplates">
+            <h3>{{ item.name }}</h3>
+            <p class="muted-copy">{{ toLabel(item.type) }}</p>
+            <div class="detail-row">
+              <span>Secciones: <strong>{{ item.sections }}</strong></span>
+              <span>Campos: <strong>{{ item.fields }}</strong></span>
+              <span>Score: <strong>{{ item.score }}/100</strong></span>
+            </div>
+            <p class="meta-line" *ngIf="item.missingCritical.length">Falta: {{ item.missingCritical.join(', ') }}</p>
+          </article>
+        </div>
+      </article>
+    </div>
   `,
 })
 export class TemplatesPageComponent {
   private readonly http = inject(HttpClient);
   private readonly fb = inject(FormBuilder);
   private readonly router = inject(Router);
+  private readonly favoritesStorageKey = 'ido_manager_template_favorites_v1';
+  private readonly maxCompare = 3;
 
   creatingFromPreview = false;
+  bulkCreating = false;
   previewDraft: PreviewDraft | null = null;
   currentStep: CreatorStep = 1;
   bigPreview: BigPreview | null = null;
+  showCompareModal = false;
 
   searchTerm = '';
   typeFilter: 'ALL' | TemplateType = 'ALL';
   sortMode: SortMode = 'recent';
+  qualityFilter = 0;
+  showFavoritesOnly = false;
 
   types: TemplateType[] = ['CHECKLIST', 'TIMELINE', 'BUDGET', 'GUEST_LIST', 'VENDOR_LIST'];
   fieldTypes: TemplateFieldType[] = ['text', 'checkbox', 'currency', 'time', 'number', 'textarea', 'date', 'select'];
   templates: TemplateModel[] = [];
   filteredTemplates: TemplateModel[] = [];
+  favorites = new Set<string>();
+  compareSelection = new Set<string>();
   draftSections: TemplateSection[] = [];
+  readonly weddingBlockCatalog: Array<{ id: WeddingBlockId; label: string }> = [
+    { id: 'legal', label: 'Legal y contratos' },
+    { id: 'venue', label: 'Venue y montaje' },
+    { id: 'ceremony', label: 'Ceremonia' },
+    { id: 'catering', label: 'Catering y menu' },
+    { id: 'photo_video', label: 'Foto y video' },
+    { id: 'music_show', label: 'Musica y show' },
+    { id: 'guest_experience', label: 'Experiencia invitado' },
+    { id: 'vendors_ops', label: 'Control proveedores' },
+    { id: 'budget_control', label: 'Control presupuesto' },
+    { id: 'transport_logistics', label: 'Transporte y logistica' },
+  ];
 
   readonly creatorForm = this.fb.group({
     name: ['', [Validators.required, Validators.minLength(3)]],
@@ -290,7 +436,7 @@ export class TemplatesPageComponent {
       highlights: ['Roadmap por fases', 'Control de tareas con prioridad', 'Dependencias criticas'],
       coverUrl: 'https://images.unsplash.com/photo-1519225421980-715cb0215aed?auto=format&fit=crop&w=1400&q=70',
       schemaJson: { version: 1, sections: [
-        this.section('Pre-boda', ['Kickoff con pareja', 'Moodboard y estilo', 'Reserva de venue', 'Plan B clima']),
+        this.section('Pre-boda', ['Kickoff con pareja', 'Moodboard y estilo', 'Reserva de espacio', 'Plan B clima']),
         this.section('Dia B operativo', ['Cronograma staff', 'Check proveedores onsite', 'Kit emergencia', 'Cierre logistico']),
         this.section('Post-evento', ['Pagos finales', 'Encuesta cliente', 'Entrega de album', 'Lecciones aprendidas']),
       ] },
@@ -305,7 +451,7 @@ export class TemplatesPageComponent {
       coverUrl: 'https://images.unsplash.com/photo-1520854221256-17451cc331bf?auto=format&fit=crop&w=1400&q=70',
       schemaJson: { version: 1, sections: [
         this.section('Decisiones clave', ['Estilo ceremonia', 'Menu final', 'Musica y momentos', 'Dress code invitados']),
-        this.section('Documentacion', ['Contrato venue', 'Documentacion civil/religiosa', 'Seguro del evento']),
+        this.section('Documentacion', ['Contrato espacio', 'Documentacion civil/religiosa', 'Seguro del evento']),
         this.section('Ultima semana', ['Confirmar asistentes', 'Pagos pendientes', 'Brief final con planner']),
       ] },
     },
@@ -368,6 +514,7 @@ export class TemplatesPageComponent {
   ];
 
   ngOnInit() {
+    this.loadFavorites();
     this.load();
     this.rebuildSectionsFromForm();
     this.creatorForm.controls.type.valueChanges.subscribe(() => this.rebuildSectionsFromForm());
@@ -385,8 +532,19 @@ export class TemplatesPageComponent {
     let data = [...this.templates];
     if (term) data = data.filter((item) => `${item.name} ${item.description ?? ''}`.toLowerCase().includes(term));
     if (this.typeFilter !== 'ALL') data = data.filter((item) => item.type === this.typeFilter);
+    if (this.qualityFilter > 0) {
+      data = data.filter((item) => this.evaluateTemplateQuality(this.getSections(item.schemaJson)).score >= this.qualityFilter);
+    }
+    if (this.showFavoritesOnly) data = data.filter((item) => this.favorites.has(item.id));
     if (this.sortMode === 'name') data.sort((a, b) => a.name.localeCompare(b.name));
     if (this.sortMode === 'fields') data.sort((a, b) => this.countFields(b.schemaJson) - this.countFields(a.schemaJson));
+    if (this.sortMode === 'quality') {
+      data.sort(
+        (a, b) =>
+          this.evaluateTemplateQuality(this.getSections(b.schemaJson)).score -
+          this.evaluateTemplateQuality(this.getSections(a.schemaJson)).score,
+      );
+    }
     if (this.sortMode === 'recent') data.sort((a, b) => (b.createdAt ? new Date(b.createdAt).getTime() : 0) - (a.createdAt ? new Date(a.createdAt).getTime() : 0));
     this.filteredTemplates = data;
   }
@@ -395,6 +553,13 @@ export class TemplatesPageComponent {
     this.searchTerm = '';
     this.typeFilter = 'ALL';
     this.sortMode = 'recent';
+    this.qualityFilter = 0;
+    this.showFavoritesOnly = false;
+    this.applyFilters();
+  }
+
+  toggleFavoritesOnly() {
+    this.showFavoritesOnly = !this.showFavoritesOnly;
     this.applyFilters();
   }
 
@@ -493,6 +658,10 @@ export class TemplatesPageComponent {
     });
   }
 
+  addWeddingBlock(id: WeddingBlockId) {
+    this.draftSections.push(this.buildWeddingBlock(id));
+  }
+
   addSection() { this.draftSections.push({ title: 'Nueva seccion', fields: [{ key: 'campo_1', label: 'Campo', type: 'text' }] }); }
   duplicateSection(index: number) {
     const clone = structuredClone(this.draftSections[index]);
@@ -520,9 +689,39 @@ export class TemplatesPageComponent {
     }).subscribe(() => this.load());
   }
 
+  loadTemplateIntoBuilder(template: TemplateModel) {
+    this.creatorForm.patchValue({
+      name: template.name,
+      type: template.type,
+      description: template.description ?? '',
+    });
+    this.draftSections = this.normalizeSections(this.getSections(template.schemaJson));
+    this.currentStep = 2;
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  exportTemplateJson(template: TemplateModel) {
+    this.downloadJson(`${template.name}.json`, {
+      name: template.name,
+      type: template.type,
+      description: template.description ?? '',
+      schemaJson: template.schemaJson,
+    });
+  }
+
+  exportDraftJson() {
+    if (!this.previewDraft) return;
+    this.downloadJson(`${this.previewDraft.name}.json`, this.previewDraft);
+  }
+
   deleteTemplate(template: TemplateModel) {
     if (!window.confirm(`Eliminar template "${template.name}"?`)) return;
-    this.http.delete(`http://localhost:3000/api/v1/templates/${template.id}`).subscribe(() => this.load());
+    this.http.delete(`http://localhost:3000/api/v1/templates/${template.id}`).subscribe(() => {
+      this.favorites.delete(template.id);
+      this.compareSelection.delete(template.id);
+      this.persistFavorites();
+      this.load();
+    });
   }
 
   openBigPreviewFromExample(item: ExampleTemplate) {
@@ -554,6 +753,98 @@ export class TemplatesPageComponent {
 
   closeBigPreview() { this.bigPreview = null; }
 
+  toggleFavorite(templateId: string) {
+    if (this.favorites.has(templateId)) this.favorites.delete(templateId);
+    else this.favorites.add(templateId);
+    this.persistFavorites();
+    this.applyFilters();
+  }
+
+  isFavorite(templateId: string) {
+    return this.favorites.has(templateId);
+  }
+
+  toggleCompare(template: TemplateModel) {
+    if (this.compareSelection.has(template.id)) {
+      this.compareSelection.delete(template.id);
+      return;
+    }
+    if (this.compareSelection.size >= this.maxCompare) return;
+    this.compareSelection.add(template.id);
+  }
+
+  isCompared(templateId: string) {
+    return this.compareSelection.has(templateId);
+  }
+
+  openCompareModal() {
+    if (this.compareSelection.size < 2) return;
+    this.showCompareModal = true;
+  }
+
+  closeCompareModal() {
+    this.showCompareModal = false;
+  }
+
+  get comparedTemplates(): CompareItem[] {
+    return this.templates
+      .filter((item) => this.compareSelection.has(item.id))
+      .map((item) => {
+        const sections = this.getSections(item.schemaJson);
+        const quality = this.evaluateTemplateQuality(sections);
+        return {
+          id: item.id,
+          name: item.name,
+          type: item.type,
+          sections: sections.length,
+          fields: this.countFields(item.schemaJson),
+          score: quality.score,
+          missingCritical: quality.missingCritical,
+        };
+      });
+  }
+
+  get avgQualityScore() {
+    if (!this.templates.length) return 0;
+    const total = this.templates.reduce(
+      (acc, template) => acc + this.evaluateTemplateQuality(this.getSections(template.schemaJson)).score,
+      0,
+    );
+    return Math.round(total / this.templates.length);
+  }
+
+  get missingTemplateTypes() {
+    const present = new Set(this.templates.map((template) => template.type));
+    return this.types.filter((type) => !present.has(type)).map((type) => this.toLabel(type));
+  }
+
+  get coreCoverageLabel() {
+    const present = new Set(this.templates.map((template) => template.type));
+    const covered = this.types.filter((type) => present.has(type)).length;
+    return `${covered}/${this.types.length}`;
+  }
+
+  createMissingCoreTemplates() {
+    const present = new Set(this.templates.map((template) => template.type));
+    const missing = this.types.filter((type) => !present.has(type));
+    if (!missing.length || this.bulkCreating) return;
+
+    this.bulkCreating = true;
+    const requests = missing.map((type) =>
+      this.http.post<TemplateModel>('http://localhost:3000/api/v1/templates', this.buildCoreTemplate(type)),
+    );
+
+    forkJoin(requests).subscribe({
+      next: () => {
+        this.bulkCreating = false;
+        this.load();
+      },
+      error: () => {
+        this.bulkCreating = false;
+      },
+    });
+  }
+
   audienceLabel(audience: TemplateAudience) {
     if (audience === 'planner') return 'Planner';
     if (audience === 'client') return 'Cliente';
@@ -573,6 +864,24 @@ export class TemplatesPageComponent {
     return sections.length;
   }
   getSections(schemaJson: Record<string, unknown>) { return (schemaJson['sections'] as TemplateSection[] | undefined) ?? []; }
+  evaluateTemplateQuality(sections: TemplateSection[]): QualityReport {
+    const names = sections.map((section) => section.title.toLowerCase());
+    const critical: Array<[string, string[]]> = [
+      ['Cronograma', ['timeline', 'cronograma', 'dia b']],
+      ['Presupuesto', ['presupuesto', 'budget', 'costes']],
+      ['Invitados', ['invitados', 'guest', 'mesa', 'rsvp']],
+      ['Proveedores', ['proveedor', 'vendor']],
+    ];
+    const missingCritical = critical
+      .filter(([, matchers]) => !matchers.some((matcher) => names.some((value) => value.includes(matcher))))
+      .map(([label]) => label);
+
+    const fieldCount = sections.reduce((acc, section) => acc + section.fields.length, 0);
+    const baseScore = Math.min(50, sections.length * 10) + Math.min(30, fieldCount * 2);
+    const qualityPenalty = missingCritical.length * 8;
+    const score = Math.max(20, Math.min(100, baseScore + 20 - qualityPenalty));
+    return { score, missingCritical };
+  }
   toLabel(type: TemplateType) { return type.replace('_', ' '); }
 
   onCardPointerMove(event: MouseEvent) {
@@ -634,12 +943,110 @@ export class TemplatesPageComponent {
     };
   }
 
+  private buildWeddingBlock(id: WeddingBlockId): TemplateSection {
+    const map: Record<WeddingBlockId, TemplateSection> = {
+      legal: this.section('Legal y contratos', ['Contrato espacio', 'Contrato catering', 'Permisos municipales', 'Seguro RC']),
+      venue: this.section('Espacio y montaje', ['Plano mesas', 'Prueba tecnica', 'Montaje decoracion', 'Checklist desmontaje']),
+      ceremony: this.section('Ceremonia', ['Guion ceremonia', 'Lecturas', 'Musica entrada', 'Plan lluvia']),
+      catering: this.section('Catering y menu', ['Menu final', 'Alergias', 'Prueba menu', 'Timing servicio']),
+      photo_video: this.section('Foto y video', ['Shot list', 'Momentos clave', 'Drone permitido', 'Entrega material']),
+      music_show: this.section('Musica y show', ['Playlist ceremonia', 'DJ briefing', 'Primer baile', 'Corte de sonido']),
+      guest_experience: this.section('Experiencia invitado', ['Welcome packs', 'Carteleria', 'Zona ninos', 'Atencion especial']),
+      vendors_ops: this.section('Control proveedores', ['Contacto principal', 'Hora llegada', 'Pago pendiente', 'Riesgos']),
+      budget_control: this.section('Control presupuesto', ['Previsto', 'Real', 'Diferencia', 'Estado de pago']),
+      transport_logistics: this.section('Transporte y logistica', ['Shuttle invitados', 'Parking', 'Timing transfers', 'Plan contingencia']),
+    };
+    return map[id];
+  }
+
+  private buildCoreTemplate(type: TemplateType) {
+    const setup: Record<TemplateType, { name: string; description: string; sections: TemplateSection[] }> = {
+      CHECKLIST: {
+        name: 'Checklist Wedding Core',
+        description: 'Tareas clave pre-boda, dia B y post.',
+        sections: [
+          this.section('Pre-boda', ['Kickoff cliente', 'Reserva espacio', 'Contratos firmados', 'Plan de riesgos']),
+          this.section('Dia B', ['Briefing staff', 'Control proveedores', 'Flujo ceremonia', 'Cierre operativo']),
+        ],
+      },
+      TIMELINE: {
+        name: 'Timeline Operativo Dia B',
+        description: 'Cronograma por bloques con responsables.',
+        sections: [
+          this.section('Morning prep', ['Hora maquillaje', 'Foto detalles', 'Traslado pareja', 'Checklist venue']),
+          this.section('Ceremonia y fiesta', ['Inicio ceremonia', 'Cocktail', 'Banquete', 'Cierre fiesta']),
+        ],
+      },
+      BUDGET: {
+        name: 'Budget Control Wedding',
+        description: 'Previsto, real y desviacion por partida.',
+        sections: [
+          this.section('Costes base', ['Espacio', 'Catering', 'Foto/video', 'Musica']),
+          this.section('Control financiero', ['Importe previsto', 'Importe real', 'Diferencia', 'Estado pago']),
+        ],
+      },
+      GUEST_LIST: {
+        name: 'Guest Experience Master',
+        description: 'RSVP, seating y atencion personalizada.',
+        sections: [
+          this.section('RSVP', ['Nombre invitado', 'Confirmacion', 'Acompanantes', 'Canal respuesta']),
+          this.section('Seating y dieta', ['Mesa', 'Alergias', 'Menu', 'Notas especiales']),
+        ],
+      },
+      VENDOR_LIST: {
+        name: 'Vendor Ops Hub',
+        description: 'Control de proveedores y entregables.',
+        sections: [
+          this.section('Ficha proveedor', ['Nombre', 'Servicio', 'Contacto', 'Canal urgente']),
+          this.section('Contrato y pagos', ['Contrato firmado', 'Entrega', 'Importe', 'Pago pendiente']),
+        ],
+      },
+    };
+
+    const selected = setup[type];
+    return {
+      name: selected.name,
+      type,
+      description: selected.description,
+      schemaJson: { version: 1, sections: selected.sections },
+    };
+  }
+
   private coverRaw(type: TemplateType) {
     if (type === 'TIMELINE') return 'https://images.unsplash.com/photo-1492684223066-81342ee5ff30?auto=format&fit=crop&w=1400&q=70';
     if (type === 'BUDGET') return 'https://images.unsplash.com/photo-1556740749-887f6717d7e4?auto=format&fit=crop&w=1400&q=70';
     if (type === 'GUEST_LIST') return 'https://images.unsplash.com/photo-1522673607200-164d1b6ce486?auto=format&fit=crop&w=1400&q=70';
     if (type === 'VENDOR_LIST') return 'https://images.unsplash.com/photo-1552664730-d307ca884978?auto=format&fit=crop&w=1400&q=70';
     return 'https://images.unsplash.com/photo-1511285560929-80b456fea0bc?auto=format&fit=crop&w=1400&q=70';
+  }
+
+  private loadFavorites() {
+    try {
+      const raw = localStorage.getItem(this.favoritesStorageKey);
+      if (!raw) return;
+      const parsed = JSON.parse(raw) as string[];
+      this.favorites = new Set(Array.isArray(parsed) ? parsed : []);
+    } catch {
+      this.favorites = new Set<string>();
+    }
+  }
+
+  private persistFavorites() {
+    try {
+      localStorage.setItem(this.favoritesStorageKey, JSON.stringify([...this.favorites]));
+    } catch {
+      // no-op
+    }
+  }
+
+  private downloadJson(filename: string, payload: unknown) {
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement('a');
+    anchor.href = url;
+    anchor.download = filename.replace(/\s+/g, '_').toLowerCase();
+    anchor.click();
+    URL.revokeObjectURL(url);
   }
 
   private buildFields(block: 'checklist' | 'timeline' | 'budget' | 'guests' | 'vendors', tone: CreatorTone): TemplateField[] {

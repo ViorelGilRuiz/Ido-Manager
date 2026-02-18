@@ -10,22 +10,60 @@ import { Subject, debounceTime, distinctUntilChanged, takeUntil } from 'rxjs';
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule],
   template: `
-    <h1>{{ title }}</h1>
-    <p>{{ saveState }}</p>
-
-    <form [formGroup]="form" class="editor-grid" *ngIf="sections.length">
-      <section *ngFor="let section of sections" class="editor-section">
-        <h2>{{ section.title }}</h2>
-        <div *ngFor="let field of section.fields" class="field-row">
-          <label>{{ field.label }}</label>
-
-          <input *ngIf="field.type === 'text'" [formControlName]="field.key" type="text" />
-          <input *ngIf="field.type === 'currency'" [formControlName]="field.key" type="number" />
-          <input *ngIf="field.type === 'time'" [formControlName]="field.key" type="time" />
-          <input *ngIf="field.type === 'checkbox'" [formControlName]="field.key" type="checkbox" />
+    <section class="document-editor-view" *ngIf="sections.length; else loadingTpl">
+      <header class="page-head">
+        <div>
+          <p class="kicker">Document studio</p>
+          <h1>{{ title }}</h1>
+          <p class="muted-copy">Rellena y guarda automaticamente cada bloque de la plantilla.</p>
         </div>
+        <div class="head-stat" [class.warn]="saveState !== 'Guardado'">
+          <span>Estado</span>
+          <strong>{{ saveState }}</strong>
+        </div>
+      </header>
+
+      <form [formGroup]="form" class="document-editor-grid panel-card">
+        <section *ngFor="let section of sections" class="editor-section-card">
+          <header class="section-header">
+            <h3>{{ section.title }}</h3>
+            <span>{{ section.fields.length }} campos</span>
+          </header>
+
+          <div class="document-fields-grid">
+            <div *ngFor="let field of section.fields" class="field-row">
+              <label>{{ field.label }}</label>
+
+              <ng-container [ngSwitch]="field.type">
+                <input *ngSwitchCase="'text'" [formControlName]="field.key" type="text" />
+                <input *ngSwitchCase="'currency'" [formControlName]="field.key" type="number" />
+                <input *ngSwitchCase="'time'" [formControlName]="field.key" type="time" />
+                <input *ngSwitchCase="'date'" [formControlName]="field.key" type="date" />
+                <input *ngSwitchCase="'number'" [formControlName]="field.key" type="number" />
+                <textarea *ngSwitchCase="'textarea'" [formControlName]="field.key" rows="3"></textarea>
+                <select *ngSwitchCase="'select'" [formControlName]="field.key">
+                  <option value="">Selecciona estado</option>
+                  <option value="pending">Pendiente</option>
+                  <option value="in_progress">En progreso</option>
+                  <option value="done">Completado</option>
+                </select>
+                <label *ngSwitchCase="'checkbox'" class="check-row">
+                  <input [formControlName]="field.key" type="checkbox" />
+                  <span>Completado</span>
+                </label>
+                <input *ngSwitchDefault [formControlName]="field.key" type="text" />
+              </ng-container>
+            </div>
+          </div>
+        </section>
+      </form>
+    </section>
+
+    <ng-template #loadingTpl>
+      <section class="empty-state">
+        <h3>Cargando documento...</h3>
       </section>
-    </form>
+    </ng-template>
   `,
 })
 export class DocumentEditorPageComponent implements OnDestroy {

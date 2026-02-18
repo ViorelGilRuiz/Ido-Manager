@@ -13,7 +13,7 @@ import { AuthStore } from '../../core/auth/auth.store';
         <div class="brand-block">
           <p class="brand-kicker">Workspace</p>
           <h2>I Do Manager</h2>
-          <p class="brand-copy">Planificacion visual para plantillas y eventos.</p>
+          <p class="brand-copy">Studio visual para plantillas, eventos y documentos.</p>
         </div>
 
         <nav class="nav-stack">
@@ -23,15 +23,15 @@ import { AuthStore } from '../../core/auth/auth.store';
             [routerLinkActiveOptions]="{ exact: true }"
             class="nav-link"
           >
-            <span class="nav-icon">▦</span>
+            <span class="nav-icon">DB</span>
             <span>Dashboard</span>
           </a>
           <a routerLink="/app/templates" routerLinkActive="is-active" class="nav-link">
-            <span class="nav-icon">◫</span>
+            <span class="nav-icon">TP</span>
             <span>Templates</span>
           </a>
           <a routerLink="/app/events" routerLinkActive="is-active" class="nav-link">
-            <span class="nav-icon">◷</span>
+            <span class="nav-icon">EV</span>
             <span>Events</span>
           </a>
         </nav>
@@ -41,6 +41,7 @@ import { AuthStore } from '../../core/auth/auth.store';
           <div class="user-chip">
             <p class="chip-label">Sesion activa</p>
             <strong>{{ (authStore.user$ | async)?.email }}</strong>
+            <span class="chip-subtext">Wedding template workspace</span>
           </div>
           <button class="logout-btn" (click)="logout()">Logout</button>
         </header>

@@ -80,15 +80,37 @@ Flujo principal:
 - Biblioteca con filtros y ordenacion
 - Vista previa grande tipo Canva
 - Galeria visual de plantillas de boda
+- Favoritos persistentes + comparador de plantillas (hasta 3)
+- Filtro por calidad minima y orden por calidad
+- Cockpit de negocio para cobertura de biblioteca
+- Generacion automatica de templates core faltantes
 
 ### 📝 Editor de template
 - Edicion de metadata y schema
 - Autosave con debounce
 - Estado de guardado en tiempo real
+- Undo / Redo + colapsado de secciones
+- Validacion inteligente con score de completitud
+- Limpieza de campos vacios y normalizacion de keys
+- Packs operativos por seccion para wedding planner
+- Preview en vivo con modo desktop/mobile
+- Preview por perfil (planner/cliente) + simulacion de avance
+- Modal premium de preview + catalogo de plantillas destacadas
+
+### 📊 Dashboard & Events
+- Layout profesional (sidebar + topbar)
+- Dashboard premium con score global de pipeline
+- KPIs de cobertura por tipos de template
+- Events control center con filtros avanzados y ordenacion
+- Tarjetas de eventos con estados visuales y acciones operativas
+
+### 📁 Event detail & Document Studio
+- Vista de detalle de evento con KPIs de documentos
+- Recomendaciones de templates para crear docs en 1 click
+- Editor de documentos dinamico por schema (`text`, `number`, `date`, `time`, `currency`, `select`, `textarea`, `checkbox`)
+- Autosave de documento cada 800ms con estado de guardado
 
 ### 🖥️ App privada
-- Layout profesional (sidebar + topbar)
-- Dashboard modular
 - Experiencia responsive
 
 ## 🌐 API v1 (endpoints clave)
@@ -151,6 +173,14 @@ docker compose up -d
 - Diseno premium orientado a productividad
 - Preview rica para validar antes de guardar
 - Responsive desktop/mobile
+- Design system global consistente (forms, cards, headers, grid, status chips)
+- Layout compacto, limpio y orientado a conversion/demo comercial
+
+## 🧪 Calidad y verificacion
+- Build frontend validado tras cada iteracion:
+  - `npm --workspace apps/web run build`
+- Lint y pruebas listos para integracion continua
+- Estructura lista para evolucionar a version enterprise
 
 ## 🛣️ Roadmap
 - RBAC granular
@@ -159,6 +189,8 @@ docker compose up -d
 - Exportacion PDF/Excel
 - Notificaciones inteligentes
 - Analitica por negocio
+- Personalizacion de marca por negocio (white-label)
+- Asistentes IA para completar templates automaticamente
 
 ## 💼 Enfoque profesional
 Este proyecto esta planteado como producto real, no como simple demo:
