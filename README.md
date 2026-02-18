@@ -204,4 +204,3 @@ Este proyecto esta planteado como producto real, no como simple demo:
 Desarrollador Full Stack orientado a producto, arquitectura y experiencia de usuario.
 
 ---
-Si quieres, en el siguiente paso te lo adapto tambien en ingles para recruiters internacionales (`README_ES.md` + `README.md` en EN).
