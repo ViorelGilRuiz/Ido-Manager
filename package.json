@@ -1,0 +1,30 @@
+{
+    "name":  "ido-manager",
+    "version":  "0.1.0",
+    "private":  true,
+    "workspaces":  [
+                       "apps/*",
+                       "packages/*"
+                   ],
+    "scripts":  {
+                    "dev:web":  "npm --workspace apps/web run start",
+                    "dev:api":  "npm --workspace apps/api run start:dev",
+                    "dev":  "npm run dev:db \u0026\u0026 concurrently -k -n web,api \"npm run dev:web\" \"npm run dev:api\"",
+                    "lint":  "npm run lint --workspaces",
+                    "test":  "npm run test --workspaces",
+                    "build":  "npm run build --workspaces",
+                    "prepare":  "husky",
+                    "dev:db":  "docker compose up -d db pgadmin"
+                },
+    "devDependencies":  {
+                            "concurrently":  "^9.2.1",
+                            "husky":  "^9.1.7",
+                            "lint-staged":  "^15.2.10",
+                            "prettier":  "^3.6.2"
+                        },
+    "lint-staged":  {
+                        "*.{ts,tsx,js,json,md,css,scss}":  [
+                                                               "prettier --write"
+                                                           ]
+                    }
+}

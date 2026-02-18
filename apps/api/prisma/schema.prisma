@@ -1,0 +1,122 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  CLIENT
+}
+
+enum EventType {
+  WEDDING
+  EVENT
+  OTHER
+}
+
+enum EventStatus {
+  DRAFT
+  ACTIVE
+  ARCHIVED
+}
+
+enum TemplateType {
+  CHECKLIST
+  TIMELINE
+  BUDGET
+  GUEST_LIST
+  VENDOR_LIST
+}
+
+model User {
+  id           String         @id @default(uuid())
+  email        String         @unique
+  passwordHash String
+  role         Role
+  businessId   String?
+  business     Business?      @relation(fields: [businessId], references: [id])
+  events       Event[]        @relation("EventCreator")
+  templates    Template[]     @relation("TemplateCreator")
+  documents    Document[]     @relation("DocumentCreator")
+  refreshTokens RefreshToken[]
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+}
+
+model Business {
+  id        String     @id @default(uuid())
+  name      String
+  slug      String     @unique
+  users     User[]
+  events    Event[]
+  templates Template[]
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+}
+
+model Event {
+  id         String      @id @default(uuid())
+  businessId String
+  business   Business    @relation(fields: [businessId], references: [id])
+  type       EventType
+  title      String
+  date       DateTime?
+  status     EventStatus @default(DRAFT)
+  createdBy  String
+  creator    User        @relation("EventCreator", fields: [createdBy], references: [id])
+  documents  Document[]
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+
+  @@index([businessId])
+}
+
+model Template {
+  id          String       @id @default(uuid())
+  businessId  String
+  business    Business     @relation(fields: [businessId], references: [id])
+  type        TemplateType
+  name        String
+  description String?
+  schemaJson  Json
+  createdBy   String
+  creator     User         @relation("TemplateCreator", fields: [createdBy], references: [id])
+  documents   Document[]
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  @@index([businessId])
+}
+
+model Document {
+  id         String    @id @default(uuid())
+  eventId    String
+  event      Event     @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  templateId String
+  template   Template  @relation(fields: [templateId], references: [id])
+  name       String
+  dataJson   Json
+  createdBy  String
+  creator    User      @relation("DocumentCreator", fields: [createdBy], references: [id])
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  @@index([eventId])
+  @@index([templateId])
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  hash      String
+  expiresAt DateTime
+  revokedAt DateTime?
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
