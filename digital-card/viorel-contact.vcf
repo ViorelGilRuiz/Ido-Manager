@@ -3,7 +3,8 @@ VERSION:3.0
 N:Gil;Viorel;;;
 FN:Viorel Gil
 TITLE:Frontend Developer
-URL:https://github.com/ViorelGilRuiz
-URL;TYPE=CV:https://github.com/ViorelGilRuiz/Ido-Manager/blob/main/digital-card/assets/ViorelGil_CV.pdf
-NOTE:Scan to access my GitHub and CV.
+URL;TYPE=GitHub:https://github.com/ViorelGilRuiz
+URL;TYPE=LinkedIn:https://www.linkedin.com/in/viorel-gil-ruiz-alejos-65810a24b/
+URL;TYPE=CV:https://drive.google.com/file/d/1Lu8suYZvinG1Y29Lo1AaTux_j2-QXcs1/view?usp=sharing
+NOTE:Scan to access my professional profile and CV.
 END:VCARD
