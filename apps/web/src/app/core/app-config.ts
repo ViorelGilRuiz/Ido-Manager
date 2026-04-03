@@ -2,7 +2,7 @@ export interface AppConfig {
   apiBaseUrl: string;
 }
 
-const defaultApiBase = 'http://localhost:3000/api/v1';
+const defaultApiBase = 'https://ido-manager-api.up.railway.app/api/v1';
 
 export const appConfig: AppConfig = {
   // Cambia esto por la URL de tu API desplegada (Railway/Fly/Render) cuando lo lances.
