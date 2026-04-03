@@ -6,8 +6,10 @@ import { ApiExceptionFilter } from './common/filters/api-exception.filter';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+  const allowedOrigin = process.env.CLIENT_URL || 'http://localhost:4200';
+
   app.enableCors({
-    origin: ['http://localhost:4200', 'http://127.0.0.1:4200'],
+    origin: allowedOrigin,
     credentials: true,
   });
   app.use(cookieParser());
