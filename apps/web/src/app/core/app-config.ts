@@ -2,7 +2,11 @@ export interface AppConfig {
   apiBaseUrl: string;
 }
 
+const defaultApiBase = 'http://localhost:3000/api/v1';
+
 export const appConfig: AppConfig = {
   // Cambia esto por la URL de tu API desplegada (Railway/Fly/Render) cuando lo lances.
-  apiBaseUrl: 'http://localhost:3000/api/v1',
+  // También puedes establecer una variable global en index.html:
+  // <script>window.API_BASE_URL='https://mi-api-host';</script>
+  apiBaseUrl: (window as any).API_BASE_URL || defaultApiBase,
 };
