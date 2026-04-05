@@ -4,7 +4,7 @@
 FROM node:20-alpine AS builder
 WORKDIR /app
 
-# Copy root package files and workspace package files
+# Copy root workspace metadata and API package files only
 COPY package.json package-lock.json ./
 COPY apps/api/package.json ./apps/api/
 COPY apps/api/tsconfig.json ./apps/api/
@@ -13,7 +13,8 @@ COPY apps/api/prisma/schema.prisma ./apps/api/prisma/
 COPY apps/api/prisma/seed.ts ./apps/api/prisma/seed.ts
 COPY apps/api/src ./apps/api/src
 
-RUN npm install
+# Install only API workspace dependencies to avoid building the full monorepo
+RUN npm install --workspace apps/api
 RUN npm --workspace apps/api run build
 RUN npm --workspace apps/api run prisma:generate
 
@@ -22,7 +23,7 @@ WORKDIR /app
 
 COPY package.json package-lock.json ./
 COPY apps/api/package.json ./apps/api/
-RUN npm install --only=production
+RUN npm install --workspace apps/api --only=production
 
 WORKDIR /app/apps/api
 COPY --from=builder /app/apps/api/dist ./dist
