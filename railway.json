@@ -1,0 +1,16 @@
+{
+  "build": {
+    "builder": "NIXPACKS",
+    "watchPatterns": [
+      "apps/api/**",
+      "apps/web/**",
+      "packages/**",
+      "package.json"
+    ]
+  },
+  "deploy": {
+    "startCommand": "npm --workspace apps/api run start:prod",
+    "restartPolicyType": "ON_FAILURE",
+    "restartPolicyMaxRetries": 5
+  }
+}
