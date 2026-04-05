@@ -7,18 +7,32 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="icon" type="image/x-icon" href="favicon.ico">
   <script>
-    // Configurar la URL de la API basada en el entorno
-    // Las variables pueden ser inyectadas por Netlify o establecidas manualmente
-    if (!window.API_BASE_URL) {
-      if (window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
-        // En producción, usar una URL configurable (ej: desde variables de entorno de Netlify)
-        window.API_BASE_URL = window.__API_BASE_URL__ || 'https://ido-manager-api.up.railway.app/api/v1';
-      } else {
-        // En desarrollo local
-        window.API_BASE_URL = 'http://localhost:3000/api/v1';
+    // Configurar la URL de la API automáticamente
+    (function() {
+      // 1. Primero verificar si ya hay URL en localStorage
+      const stored = localStorage.getItem('API_BASE_URL');
+      if (stored) {
+        window.API_BASE_URL = stored;
+        console.log('✅ API_BASE_URL from localStorage:', stored);
+        return;
       }
-    }
-    console.log('API Base URL:', window.API_BASE_URL);
+
+      // 2. Verificar si es producción o desarrollo
+      if (window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+        // En producción en Netlify: intentar la URL de Railway
+        window.API_BASE_URL = 'https://ido-manager-api.railway.app/api/v1';
+        console.log('🚀 Running in production, using Railway URL');
+      } else {
+        // En localhost: usar localhost
+        window.API_BASE_URL = 'http://localhost:3000/api/v1';
+        console.log('💻 Running in development, using localhost');
+      }
+
+      // 3. Mostrar instrucción en consola
+      console.log('%c🔗 API Configuration Guide', 'color: #0f766e; font-size: 14px; font-weight: bold;');
+      console.log('%cCurrent API URL: ' + window.API_BASE_URL, 'color: #10b981; font-size: 12px;');
+      console.log('%cTo change API URL, run in console:\nlocalStorage.setItem("API_BASE_URL", "https://your-api.com/api/v1");\nlocation.reload();', 'color: #f59e0b; font-size: 11px;');
+    })();
   </script>
 </head>
 <body>

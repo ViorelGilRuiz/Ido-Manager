@@ -3,28 +3,36 @@ import { environment } from '../../environments/environment';
 
 @Injectable({ providedIn: 'root' })
 export class ApiService {
-  private readonly baseUrl = this.getBaseUrl();
+  private baseUrl: string;
+
+  constructor() {
+    this.baseUrl = this.getBaseUrl();
+    console.log('🔌 API Service - Using URL:', this.baseUrl);
+  }
 
   private getBaseUrl(): string {
-    // 1. Primero intentar variable global window.API_BASE_URL (puede ser inyectada por Netlify)
+    // 1. Variable global de ventana (puede ser inyectada por Netlify)
     if ((window as any).API_BASE_URL) {
-      console.log('Using API_BASE_URL from window:', (window as any).API_BASE_URL);
       return (window as any).API_BASE_URL;
     }
 
-    // 2. Usar la configuración de Angular environments
+    // 2. Variable en localStorage (puede cambiar en runtime)
+    const storedUrl = localStorage.getItem('API_BASE_URL');
+    if (storedUrl) {
+      return storedUrl;
+    }
+
+    // 3. Usar configuración de Angular environments
     if (environment.apiBaseUrl) {
-      console.log('Using API_BASE_URL from environment:', environment.apiBaseUrl);
       return environment.apiBaseUrl;
     }
 
-    // 3. Fallback para producción
-    if (!environment.production) {
-      console.log('Running in development mode');
+    // 4. Fallback: Detectar según el host
+    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
       return 'http://localhost:3000/api/v1';
     }
 
-    console.log('Using default Railway API URL');
+    // 5. Para producción en Netlify
     return 'https://ido-manager-api.railway.app/api/v1';
   }
 
@@ -48,19 +56,19 @@ export class ApiService {
     return this.baseUrl;
   }
 
-  /**
-   * Permite cambiar la URL de la API en tiempo de ejecución (útil para testing)
-   */
   setApiBaseUrl(url: string): void {
-    (window as any).API_BASE_URL = url;
     localStorage.setItem('API_BASE_URL', url);
-    location.reload();
+    (window as any).API_BASE_URL = url;
+    this.baseUrl = url;
+    console.log('✅ API URL changed to:', url);
+    // Recargar para que los cambios tomen efecto
+    window.location.reload();
   }
 
   getCurrentApiUrl(): string {
-    console.log('🔌 Current API URL:', this.baseUrl);
     return this.baseUrl;
   }
 }
+
 
 
