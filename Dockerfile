@@ -14,7 +14,7 @@ COPY apps/api/prisma/seed.ts ./apps/api/prisma/seed.ts
 COPY apps/api/src ./apps/api/src
 
 # Install only API workspace dependencies to avoid building the full monorepo
-RUN npm install --workspace apps/api
+RUN npm ci --workspace apps/api --no-audit --no-fund
 RUN npm --workspace apps/api run build
 RUN npm --workspace apps/api run prisma:generate
 
@@ -23,7 +23,7 @@ WORKDIR /app
 
 COPY package.json package-lock.json ./
 COPY apps/api/package.json ./apps/api/
-RUN npm install --workspace apps/api --only=production
+RUN npm ci --workspace apps/api --only=production --omit=dev --no-audit --no-fund
 
 WORKDIR /app/apps/api
 COPY --from=builder /app/apps/api/dist ./dist
