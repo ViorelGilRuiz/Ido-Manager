@@ -29,5 +29,6 @@ WORKDIR /app/apps/api
 COPY --from=builder /app/apps/api/dist ./dist
 COPY --from=builder /app/apps/api/prisma ./prisma
 
-EXPOSE 3000
+ENV PORT=8080
+EXPOSE 8080
 CMD ["node", "dist/main"]
