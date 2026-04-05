@@ -33,7 +33,7 @@ export class ApiService {
     }
 
     // 5. Para producción en Netlify
-    return 'https://ido-manager-api.railway.app/api/v1';
+    return 'https://ido-manager-api-production.up.railway.app/api/v1';
   }
 
   getAuthUrl(endpoint: string): string {

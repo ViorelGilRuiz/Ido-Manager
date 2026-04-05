@@ -39,7 +39,8 @@ async function bootstrap() {
   );
   app.useGlobalFilters(new ApiExceptionFilter());
 
-  const port = Number(process.env.API_PORT ?? 3000);
+  const port = Number(process.env.PORT ?? process.env.API_PORT ?? 3000);
+  console.log(`🚀 Starting API on port ${port} (PORT=${process.env.PORT}, API_PORT=${process.env.API_PORT})`);
   await app.listen(port);
 }
 

@@ -19,8 +19,8 @@
 
       // 2. Verificar si es producción o desarrollo
       if (window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
-        // En producción en Netlify: intentar la URL de Railway
-        window.API_BASE_URL = 'https://ido-manager-api.railway.app/api/v1';
+        // En producción en Netlify: usar la URL pública correcta de Railway
+        window.API_BASE_URL = 'https://ido-manager-api-production.up.railway.app/api/v1';
         console.log('🚀 Running in production, using Railway URL');
       } else {
         // En localhost: usar localhost
