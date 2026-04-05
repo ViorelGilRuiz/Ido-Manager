@@ -13,6 +13,8 @@ import { Role } from '../../shared/models';
     <section class="auth-shell auth-pro">
       <div class="auth-canvas" aria-hidden="true">
         <div class="grid-lines"></div>
+        <div class="energy-orb orb-a"></div>
+        <div class="energy-orb orb-b"></div>
         <div class="floating-block block-a"></div>
         <div class="floating-block block-b"></div>
         <div class="floating-block block-c"></div>
@@ -20,16 +22,28 @@ import { Role } from '../../shared/models';
 
       <div class="auth-layout">
         <aside class="auth-panel">
-          <p class="eyebrow">I Do Manager</p>
-          <h1>Crea tu espacio de trabajo</h1>
+          <p class="eyebrow">I Do Manager · Access setup</p>
+          <h1>Crea tu acceso y define el nivel del workspace</h1>
           <p>
-            Registra una cuenta para construir plantillas y gestionar documentos por evento.
+            Elige entre modo cliente o modo administrador. Puedes empezar como cliente y subir a plan
+            completo cuando quieras operar plantillas, eventos y automatizaciones en serio.
           </p>
+          <div class="role-note-grid">
+            <article>
+              <p>CLIENT</p>
+              <strong>Acceso base + upgrade</strong>
+            </article>
+            <article>
+              <p>ADMIN</p>
+              <strong>Editor total de negocio</strong>
+            </article>
+          </div>
         </aside>
 
         <form [formGroup]="form" (ngSubmit)="onSubmit()" class="auth-card">
           <p class="form-kicker">Nuevo acceso</p>
           <h2>Crear cuenta</h2>
+          <p class="form-copy">Configura tu cuenta con un flujo claro y entra en segundos al panel.</p>
 
           <label>
             Email
@@ -58,8 +72,8 @@ import { Role } from '../../shared/models';
           <label>
             Rol
             <select formControlName="role">
-              <option value="ADMIN">ADMIN</option>
-              <option value="CLIENT">CLIENT</option>
+              <option value="CLIENT">CLIENT (base)</option>
+              <option value="ADMIN">ADMIN (completo)</option>
             </select>
           </label>
 
@@ -67,6 +81,13 @@ import { Role } from '../../shared/models';
             Nombre del negocio
             <input formControlName="businessName" placeholder="Ej: Viorel Wedding Studio" type="text" />
           </label>
+
+          <p class="plan-hint" *ngIf="form.value.role === 'CLIENT'">
+            Plan cliente: vista de panel y experiencia guiada. Para editar templates/eventos necesitas upgrade.
+          </p>
+          <p class="plan-hint" *ngIf="form.value.role === 'ADMIN'">
+            Plan administrador: acceso total a templates, eventos, documentos y automatizaciones.
+          </p>
 
           <button type="submit" [disabled]="form.invalid || loading">
             {{ loading ? 'Creando...' : 'Crear cuenta' }}
@@ -93,19 +114,14 @@ export class RegisterPageComponent {
   readonly form = this.fb.group({
     email: ['', [Validators.required, Validators.email]],
     password: ['', [Validators.required, Validators.minLength(8)]],
-    role: ['ADMIN' as Role, Validators.required],
-    businessName: ['', [Validators.required]],
+    role: ['CLIENT' as Role, Validators.required],
+    businessName: [''],
   });
 
   constructor() {
+    this.syncBusinessRules(this.form.controls.role.value ?? 'CLIENT');
     this.form.controls.role.valueChanges.subscribe((role) => {
-      const control = this.form.controls.businessName;
-      if (role === 'ADMIN') {
-        control.addValidators([Validators.required, Validators.minLength(2)]);
-      } else {
-        control.clearValidators();
-      }
-      control.updateValueAndValidity({ emitEvent: false });
+      this.syncBusinessRules(role ?? 'CLIENT');
     });
   }
 
@@ -146,5 +162,16 @@ export class RegisterPageComponent {
       return apiMessage;
     }
     return fallback;
+  }
+
+  private syncBusinessRules(role: Role) {
+    const control = this.form.controls.businessName;
+    if (role === 'ADMIN') {
+      control.addValidators([Validators.required, Validators.minLength(2)]);
+    } else {
+      control.clearValidators();
+      control.setValue('', { emitEvent: false });
+    }
+    control.updateValueAndValidity({ emitEvent: false });
   }
 }

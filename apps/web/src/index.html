@@ -2,10 +2,24 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <title>Web</title>
+  <title>I Do Manager - Wedding OS</title>
   <base href="/">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="icon" type="image/x-icon" href="favicon.ico">
+  <script>
+    // Configurar la URL de la API basada en el entorno
+    // Las variables pueden ser inyectadas por Netlify o establecidas manualmente
+    if (!window.API_BASE_URL) {
+      if (window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+        // En producción, usar una URL configurable (ej: desde variables de entorno de Netlify)
+        window.API_BASE_URL = window.__API_BASE_URL__ || 'https://ido-manager-api.up.railway.app/api/v1';
+      } else {
+        // En desarrollo local
+        window.API_BASE_URL = 'http://localhost:3000/api/v1';
+      }
+    }
+    console.log('API Base URL:', window.API_BASE_URL);
+  </script>
 </head>
 <body>
   <app-root></app-root>

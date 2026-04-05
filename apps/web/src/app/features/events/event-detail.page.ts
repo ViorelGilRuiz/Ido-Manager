@@ -3,6 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { Component, inject } from '@angular/core';
 import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
+import { forkJoin } from 'rxjs';
 import { DocumentModel, EventModel, TemplateModel, TemplateType } from '../../shared/models';
 
 @Component({
@@ -22,6 +23,24 @@ import { DocumentModel, EventModel, TemplateModel, TemplateType } from '../../sh
           <strong>{{ documents.length }}</strong>
         </div>
       </header>
+
+      <section class="panel-card">
+        <div class="panel-head">
+          <h3>Control rápido del evento</h3>
+          <span class="muted-copy">Edita datos base y estado operativo desde aquí.</span>
+        </div>
+        <div class="event-docs-workbench__row">
+          <input [(ngModel)]="eventQuickTitle" [ngModelOptions]="{ standalone: true }" placeholder="Nombre del evento" />
+          <select [(ngModel)]="eventQuickStatus" [ngModelOptions]="{ standalone: true }">
+            <option value="DRAFT">DRAFT</option>
+            <option value="ACTIVE">ACTIVE</option>
+            <option value="ARCHIVED">ARCHIVED</option>
+          </select>
+          <input type="date" [(ngModel)]="eventQuickDate" [ngModelOptions]="{ standalone: true }" />
+          <button type="button" class="ghost-btn" (click)="saveEventQuickEdit()" [disabled]="!event">Guardar evento</button>
+          <button type="button" class="ghost-btn" (click)="activateEventNow()" [disabled]="!event">Activar hoy</button>
+        </div>
+      </section>
 
       <section class="insight-grid dashboard-kpis">
         <article class="insight-card">
@@ -61,10 +80,47 @@ import { DocumentModel, EventModel, TemplateModel, TemplateType } from '../../sh
             + {{ template.name }}
           </button>
         </div>
+
+        <div class="event-docs-workbench">
+          <div class="event-docs-workbench__row">
+            <span class="workbench-pill">Core cubierto: {{ eventCoverageLabel }}</span>
+            <span class="workbench-pill">Faltan: {{ missingCoreTemplates.length }}</span>
+            <button
+              type="button"
+              class="ghost-btn"
+              (click)="createRecommendedPack()"
+              [disabled]="!missingCoreTemplates.length"
+            >
+              Crear pack core faltante
+            </button>
+          </div>
+          <div class="template-suggestion-row" *ngIf="missingCoreTemplates.length">
+            <span class="muted-copy">Bloques core pendientes:</span>
+            <button type="button" class="ghost-btn" *ngFor="let type of missingCoreTemplates">
+              {{ toLabel(type) }}
+            </button>
+          </div>
+        </div>
       </section>
 
-      <section class="template-grid" *ngIf="documents.length; else emptyState">
-        <article class="template-card interactive-card" *ngFor="let doc of documents; trackBy: trackById">
+      <section class="template-library" *ngIf="documents.length">
+        <div class="library-toolbar">
+          <input [(ngModel)]="documentSearch" [ngModelOptions]="{ standalone: true }" placeholder="Buscar documento..." />
+          <select [(ngModel)]="documentTypeFilter" [ngModelOptions]="{ standalone: true }">
+            <option value="ALL">Todos tipos</option>
+            <option *ngFor="let type of coreTemplateTypes" [value]="type">{{ toLabel(type) }}</option>
+          </select>
+          <select [(ngModel)]="documentSortMode" [ngModelOptions]="{ standalone: true }">
+            <option value="recent">Recientes</option>
+            <option value="name">Nombre</option>
+            <option value="type">Tipo</option>
+          </select>
+          <span class="workbench-pill">Mostrando: {{ filteredDocuments.length }}</span>
+        </div>
+      </section>
+
+      <section class="template-grid" *ngIf="documents.length && filteredDocuments.length; else emptyState">
+        <article class="template-card interactive-card" *ngFor="let doc of filteredDocuments; trackBy: trackById">
           <div class="event-card-head">
             <p class="type-chip">{{ toLabel(doc.template.type) }}</p>
             <span class="status-pill is-active">Live</span>
@@ -99,6 +155,12 @@ export class EventDetailPageComponent {
   event: EventModel | null = null;
   templates: TemplateModel[] = [];
   documents: DocumentModel[] = [];
+  documentSearch = '';
+  documentTypeFilter: TemplateType | 'ALL' = 'ALL';
+  documentSortMode: 'recent' | 'name' | 'type' = 'recent';
+  eventQuickTitle = '';
+  eventQuickStatus: 'DRAFT' | 'ACTIVE' | 'ARCHIVED' = 'DRAFT';
+  eventQuickDate = '';
 
   readonly form = this.fb.group({
     templateId: ['', Validators.required],
@@ -122,6 +184,33 @@ export class EventDetailPageComponent {
     return this.templates.filter((template) => !covered.has(template.id)).slice(0, 4);
   }
 
+  get coreTemplateTypes(): TemplateType[] {
+    return ['CHECKLIST', 'TIMELINE', 'BUDGET', 'GUEST_LIST', 'VENDOR_LIST'];
+  }
+
+  get missingCoreTemplates() {
+    const present = new Set(this.documents.map((doc) => doc.template.type));
+    return this.coreTemplateTypes.filter((type) => !present.has(type));
+  }
+
+  get filteredDocuments() {
+    const q = this.documentSearch.trim().toLowerCase();
+    let data = this.documents.filter((doc) => {
+      const typeOk = this.documentTypeFilter === 'ALL' ? true : doc.template.type === this.documentTypeFilter;
+      const searchOk = q ? `${doc.name} ${doc.template.name} ${doc.template.type}`.toLowerCase().includes(q) : true;
+      return typeOk && searchOk;
+    });
+    if (this.documentSortMode === 'name') data = [...data].sort((a, b) => a.name.localeCompare(b.name));
+    if (this.documentSortMode === 'type') data = [...data].sort((a, b) => a.template.type.localeCompare(b.template.type));
+    if (this.documentSortMode === 'recent') {
+      data = [...data].sort(
+        (a, b) =>
+          (b.updatedAt ? new Date(b.updatedAt).getTime() : 0) - (a.updatedAt ? new Date(a.updatedAt).getTime() : 0),
+      );
+    }
+    return data;
+  }
+
   ngOnInit() {
     this.eventId = this.route.snapshot.paramMap.get('id') ?? '';
     this.loadEvent();
@@ -132,6 +221,9 @@ export class EventDetailPageComponent {
   loadEvent() {
     this.http.get<EventModel>(`http://localhost:3000/api/v1/events/${this.eventId}`).subscribe((data) => {
       this.event = data;
+      this.eventQuickTitle = data.title;
+      this.eventQuickStatus = data.status;
+      this.eventQuickDate = data.date ? data.date.slice(0, 10) : '';
     });
   }
 
@@ -160,6 +252,22 @@ export class EventDetailPageComponent {
       });
   }
 
+  createRecommendedPack() {
+    const targets = this.templates.filter((template) => this.missingCoreTemplates.includes(template.type)).slice(0, 5);
+    if (!targets.length) return;
+    const requests = targets.map((template) =>
+      this.http.post(`http://localhost:3000/api/v1/events/${this.eventId}/documents`, {
+        templateId: template.id,
+        name: `${template.name} · ${this.event?.title ?? 'Evento'}`,
+      }),
+    );
+    if (requests.length === 1) {
+      requests[0].subscribe(() => this.loadDocuments());
+      return;
+    }
+    forkJoin(requests).subscribe(() => this.loadDocuments());
+  }
+
   quickCreateFromTemplate(template: TemplateModel) {
     const payload = {
       templateId: template.id,
@@ -168,6 +276,32 @@ export class EventDetailPageComponent {
     this.http
       .post(`http://localhost:3000/api/v1/events/${this.eventId}/documents`, payload)
       .subscribe(() => this.loadDocuments());
+  }
+
+  saveEventQuickEdit() {
+    if (!this.event) return;
+    const title = this.eventQuickTitle.trim();
+    if (!title) return;
+    this.http
+      .patch<EventModel>(`http://localhost:3000/api/v1/events/${this.eventId}`, {
+        title,
+        status: this.eventQuickStatus,
+        date: this.eventQuickDate || null,
+      })
+      .subscribe((updated) => {
+        this.event = updated;
+        this.eventQuickTitle = updated.title;
+        this.eventQuickStatus = updated.status;
+        this.eventQuickDate = updated.date ? updated.date.slice(0, 10) : '';
+      });
+  }
+
+  activateEventNow() {
+    if (!this.event) return;
+    const today = new Date().toISOString().slice(0, 10);
+    this.eventQuickStatus = 'ACTIVE';
+    this.eventQuickDate = today;
+    this.saveEventQuickEdit();
   }
 
   toLabel(value: string) {

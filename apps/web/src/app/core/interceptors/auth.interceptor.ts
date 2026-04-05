@@ -1,17 +1,20 @@
 import { HttpInterceptorFn } from '@angular/common/http';
 import { inject } from '@angular/core';
 import { AuthStore } from '../auth/auth.store';
-import { appConfig } from '../app-config';
-
-const LOCAL_API_PREFIX = 'http://localhost:3000/api/v1';
+import { ApiService } from '../api.service';
 
 export const authInterceptor: HttpInterceptorFn = (req, next) => {
   const authStore = inject(AuthStore);
+  const apiService = inject(ApiService);
   const token = authStore.accessToken;
 
   let requestUrl = req.url;
-  if (requestUrl.startsWith(LOCAL_API_PREFIX)) {
-    requestUrl = requestUrl.replace(LOCAL_API_PREFIX, appConfig.apiBaseUrl);
+  // Remapear URLs localhost a la URL real de API
+  const localApiPrefix = 'http://localhost:3000/api/v1';
+  const prodApiPrefix = apiService.getBaseApiUrl();
+  
+  if (requestUrl.startsWith(localApiPrefix)) {
+    requestUrl = requestUrl.replace(localApiPrefix, prodApiPrefix);
     req = req.clone({ url: requestUrl });
   }
 

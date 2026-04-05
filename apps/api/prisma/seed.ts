@@ -23,13 +23,13 @@ async function main() {
   await prisma.user.upsert({
     where: { email: 'viorelgilruiz@gmail.com' },
     update: {
-      passwordHash: '$2b$10$iAB2VGMg8uG2T1vgqDjDzu9QNkeEMJt5jBIGf18raDxgw4yGMNHH6',
+      passwordHash: '$2b$10$xB8TfsceMha3/1duk9dlG.ETiyFCXOIGYx3lElFe1C8ERlf7nwBsa',
       role: 'ADMIN' as any,
       businessId: business.id,
     },
     create: {
       email: 'viorelgilruiz@gmail.com',
-      passwordHash: '$2b$10$iAB2VGMg8uG2T1vgqDjDzu9QNkeEMJt5jBIGf18raDxgw4yGMNHH6',
+      passwordHash: '$2b$10$xB8TfsceMha3/1duk9dlG.ETiyFCXOIGYx3lElFe1C8ERlf7nwBsa',
       role: 'ADMIN' as any,
       businessId: business.id,
     },

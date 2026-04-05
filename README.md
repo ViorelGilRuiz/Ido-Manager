@@ -16,6 +16,20 @@ Perfiles principales:
 - `ADMIN` → wedding planner / negocio
 - `CLIENT` → cliente final
 
+## 📌 Highlights (GitHub)
+- `Template Marketplace` visual estilo galeria (exploracion de plantillas)
+- `Editor Libre` avanzado para editar templates con canvas visual
+- `Events Control Center` con vistas `Cards / Board / Timeline`
+- `Event Detail` con generacion de documentos desde templates y pack core
+- Arquitectura modular `Angular + NestJS + Prisma` lista para evolucionar a SaaS
+
+## 🧭 Navegacion rapida
+- `Dashboard` → KPIs y cockpit operativo
+- `Templates` → biblioteca, filtros, comparador, marketplace visual
+- `Editor Libre` → canvas visual + capas + estilos + herramientas pro
+- `Events` → gestion operativa + agenda + acciones en lote
+- `Event Detail` → documentos por evento y cobertura core
+
 ## 🎯 Propuesta de valor
 - Estandariza operaciones con templates reutilizables.
 - Reduce errores con checklist, timeline, budget, invitados y proveedores.
@@ -84,6 +98,14 @@ Flujo principal:
 - Filtro por calidad minima y orden por calidad
 - Cockpit de negocio para cobertura de biblioteca
 - Generacion automatica de templates core faltantes
+- Generador automatico por brief (estilo, invitados y presupuesto)
+- Autorrelleno masivo de campos + pack Wedding 360
+- Conversion 1-click a version cliente (plantilla simplificada)
+- Pulido de copy para cliente final en preview del wizard
+- Preview grande con modos visuales (`Showcase` / `Board`)
+- Vista marketplace/galeria de templates con cards premium y filtros visuales
+- Acceso directo a `Editor Libre` desde sidebar y dashboard
+- Ruta dedicada del editor libre (`/app/free-editor`)
 
 ### 📝 Editor de template
 - Edicion de metadata y schema
@@ -96,17 +118,52 @@ Flujo principal:
 - Preview en vivo con modo desktop/mobile
 - Preview por perfil (planner/cliente) + simulacion de avance
 - Modal premium de preview + catalogo de plantillas destacadas
+- Boton de autocompletado de campos requeridos
+- Generador rapido de checklist cliente dentro del editor
+- Slots horarios de Dia B por seccion en 1 click
+- Preview por etapa (`Pre-boda`, `Dia B`, `Post`) con datos dinamicos
+- Modo reveal animado en preview grande para demos comerciales
+- `Editor Libre` (canvas visual) con herramientas avanzadas:
+  - movimiento libre de capas
+  - toolbar contextual sobre capa seleccionada
+  - panel profesional por pestañas (`Canvas`, `Selección`, `Bloques`, `Estilo`, `Acciones`)
+  - inspector completo (texto manual, colores, posicion, tamaño, opacidad, estilos)
+  - resize con handles visuales
+  - rotacion con handle visual (snap con `Shift`)
+  - presets de snap/nudge (`Precision`, `Balanced`, `Fast`)
+  - guias de centro, grid y snap configurables
+  - shortcuts avanzados (mover, duplicar, borrar, bloquear, ocultar, navegar capas)
+  - layer stack (capas ordenadas por z-index)
+  - bloques/cajones y kits visuales (`Hero`, `Stats`, `CTA`, `Firma`, etc.)
+  - paletas rapidas de capa y tema global
+  - efectos avanzados (`blur`, `blend mode`, `border`, presets glass/glow/elevated`)
+  - exportacion PDF desde preview
 
 ### 📊 Dashboard & Events
 - Layout profesional (sidebar + topbar)
 - Dashboard premium con score global de pipeline
 - KPIs de cobertura por tipos de template
-- Events control center con filtros avanzados y ordenacion
-- Tarjetas de eventos con estados visuales y acciones operativas
+- Dashboard con acceso directo a `Editor Libre`
+- Events control center avanzado:
+  - filtros avanzados, busqueda y ordenacion
+  - vistas `Cards`, `Board` (kanban por estado) y `Timeline`
+  - seleccion multiple y acciones en lote
+  - activacion/archivado/duplicado/eliminacion masiva
+  - asignacion de fechas IA y desplazamiento de fechas por lote (`+/- dias`)
+  - timeline con horizonte configurable y estado visual de urgencia
+  - creacion rapida de series de eventos (fases x3)
+  - IA helper para autoplanificacion, conflictos y readiness documental
+- Tarjetas de eventos con acciones operativas y edicion inline
 
 ### 📁 Event detail & Document Studio
 - Vista de detalle de evento con KPIs de documentos
 - Recomendaciones de templates para crear docs en 1 click
+- Workbench de documentos en detalle de evento:
+  - cobertura core (`CHECKLIST`, `TIMELINE`, `BUDGET`, `GUEST_LIST`, `VENDOR_LIST`)
+  - deteccion de bloques faltantes
+  - creacion de pack core faltante en lote
+  - filtros de documentos por tipo, busqueda y orden
+- Control rapido del evento desde el detalle (nombre, estado, fecha, activar hoy)
 - Editor de documentos dinamico por schema (`text`, `number`, `date`, `time`, `currency`, `select`, `textarea`, `checkbox`)
 - Autosave de documento cada 800ms con estado de guardado
 
@@ -175,6 +232,23 @@ docker compose up -d
 - Responsive desktop/mobile
 - Design system global consistente (forms, cards, headers, grid, status chips)
 - Layout compacto, limpio y orientado a conversion/demo comercial
+- Vista previa grande ampliada y optimizada para presentaciones a cliente
+- Sidebars y workbenches con herramientas por contexto (templates, editor, events)
+- Flujos de edicion visual y operativa pensados para planners (rapidez + control)
+
+## 🖼️ Capturas recomendadas (para GitHub)
+Para mejorar la presentacion del repo en GitHub, añade screenshots en una carpeta `docs/screenshots/` y referencialos aqui:
+- `Dashboard` (KPIs y accesos)
+- `Templates Marketplace` (galeria estilo Notion)
+- `Editor Libre` (canvas + panel de herramientas)
+- `Events Board` (kanban operativo)
+- `Events Timeline` (agenda visual)
+- `Event Detail` (documentos + cobertura core)
+
+Ejemplo:
+```md
+![Editor Libre](docs/screenshots/free-editor.png)
+```
 
 ## 🧪 Calidad y verificacion
 - Build frontend validado tras cada iteracion:
@@ -184,13 +258,15 @@ docker compose up -d
 
 ## 🛣️ Roadmap
 - RBAC granular
-- Colaboracion en tiempo real
+- Colaboracion en tiempo real (multiusuario en editor/canvas)
 - Versionado de templates/documents
-- Exportacion PDF/Excel
+- Exportacion PDF/Excel avanzada (fidelidad visual del canvas)
 - Notificaciones inteligentes
 - Analitica por negocio
 - Personalizacion de marca por negocio (white-label)
 - Asistentes IA para completar templates automaticamente
+- Drag & drop real en Events Board
+- Calendar view mensual/semanal para eventos
 
 ## 💼 Enfoque profesional
 Este proyecto esta planteado como producto real, no como simple demo:

@@ -2,20 +2,31 @@ import { inject, Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { BehaviorSubject, Observable, catchError, map, of, tap } from 'rxjs';
 import { AuthResponse, CurrentUser, Role } from '../../shared/models';
+import { ApiService } from '../api.service';
 
 @Injectable({ providedIn: 'root' })
 export class AuthStore {
   private readonly http = inject(HttpClient);
-  private readonly baseUrl = 'http://localhost:3000/api/v1/auth';
+  private readonly apiService = inject(ApiService);
 
   private readonly accessTokenSubject = new BehaviorSubject<string | null>(null);
   private readonly userSubject = new BehaviorSubject<CurrentUser | null>(null);
 
   readonly user$ = this.userSubject.asObservable();
   readonly isAuthenticated$ = this.user$.pipe(map((user) => !!user));
+  readonly isAdmin$ = this.user$.pipe(map((user) => user?.role === 'ADMIN'));
+  readonly isClient$ = this.user$.pipe(map((user) => user?.role === 'CLIENT'));
 
   get accessToken(): string | null {
     return this.accessTokenSubject.value;
+  }
+
+  get user(): CurrentUser | null {
+    return this.userSubject.value;
+  }
+
+  get isAdmin() {
+    return this.userSubject.value?.role === 'ADMIN';
   }
 
   bootstrap(): Observable<boolean> {
@@ -40,7 +51,7 @@ export class AuthStore {
     businessName?: string;
   }): Observable<AuthResponse> {
     return this.http
-      .post<AuthResponse>(`${this.baseUrl}/register`, payload, {
+      .post<AuthResponse>(this.apiService.getAuthUrl('/register'), payload, {
         withCredentials: true,
       })
       .pipe(tap((session) => this.setSession(session)));
@@ -48,7 +59,7 @@ export class AuthStore {
 
   login(payload: { email: string; password: string }): Observable<AuthResponse> {
     return this.http
-      .post<AuthResponse>(`${this.baseUrl}/login`, payload, {
+      .post<AuthResponse>(this.apiService.getAuthUrl('/login'), payload, {
         withCredentials: true,
       })
       .pipe(tap((session) => this.setSession(session)));
@@ -56,13 +67,13 @@ export class AuthStore {
 
   refresh(): Observable<AuthResponse> {
     return this.http
-      .post<AuthResponse>(`${this.baseUrl}/refresh`, {}, { withCredentials: true })
+      .post<AuthResponse>(this.apiService.getAuthUrl('/refresh'), {}, { withCredentials: true })
       .pipe(tap((session) => this.setSession(session)));
   }
 
   logout(): Observable<unknown> {
     return this.http
-      .post(`${this.baseUrl}/logout`, {}, { withCredentials: true })
+      .post(this.apiService.getAuthUrl('/logout'), {}, { withCredentials: true })
       .pipe(tap(() => this.clearSession()));
   }
 

@@ -12,6 +12,8 @@ import { AuthStore } from '../../core/auth/auth.store';
     <section class="auth-shell auth-pro">
       <div class="auth-canvas" aria-hidden="true">
         <div class="grid-lines"></div>
+        <div class="energy-orb orb-a"></div>
+        <div class="energy-orb orb-b"></div>
         <div class="floating-block block-a"></div>
         <div class="floating-block block-b"></div>
         <div class="floating-block block-c"></div>
@@ -19,21 +21,32 @@ import { AuthStore } from '../../core/auth/auth.store';
 
       <div class="auth-layout">
         <aside class="auth-panel">
-          <p class="eyebrow">I Do Manager</p>
-          <h1>Disena y edita plantillas que tu equipo si usa</h1>
+          <p class="eyebrow">I Do Manager · Wedding OS</p>
+          <h1>Gestion premium para wedding planners que quieren crecer con orden</h1>
           <p>
-            Convierte ideas en flujos claros: crea templates, clona por evento y mantiene cada
-            documento actualizado con autosave.
+            Centraliza operaciones, contenido y decisiones en una sola plataforma visual, con flujo
+            profesional para equipo interno y cliente final.
           </p>
           <ul class="feature-list">
-            <li>Editor por secciones y campos dinamicos</li>
-            <li>Autosave con feedback de guardado</li>
-            <li>Arquitectura lista para escalar por negocio</li>
+            <li>Editor visual con vista previa en vivo</li>
+            <li>Autosave y asistencia inteligente para contenido</li>
+            <li>Control por rol: admin completo y cliente premium</li>
           </ul>
           <div class="signal-row">
             <span>Checklist</span>
             <span>Timeline</span>
             <span>Budget</span>
+            <span>Guest Flow</span>
+          </div>
+          <div class="role-note-grid">
+            <article>
+              <p>ADMIN</p>
+              <strong>Suite completa</strong>
+            </article>
+            <article>
+              <p>CLIENT</p>
+              <strong>Vista + upgrade</strong>
+            </article>
           </div>
         </aside>
 
@@ -41,7 +54,7 @@ import { AuthStore } from '../../core/auth/auth.store';
           <p class="form-kicker">Workspace privado</p>
           <h2>Bienvenido de nuevo</h2>
           <p class="form-copy">
-            Entra para editar plantillas, crear eventos y actualizar documentos en tiempo real.
+            Accede a tu panel, retoma tareas y publica avances con una experiencia rapida y elegante.
           </p>
           <label>
             Email

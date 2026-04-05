@@ -71,7 +71,7 @@ export class AuthController {
       httpOnly: true,
       sameSite: 'lax',
       secure: false,
-      path: '/api/v1/auth',
+      path: '/',
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
   }
